@@ -1,6 +1,8 @@
 # AI_in_business_course
 This repository is created to share the results of my work on the concept of AI instrument, which helps to keep track of materials for the construction workers and buy them instantly via different interfaces
 
+ПОКА НЕ РАБОТАЕТ, НЕ ДОБАВЛЕНА ЛОКАЛЬНАЯ МОДЕЛЬКА В РЕПОЗИТОРИЙ
+
 ## Development
 
 Start with the [demo baseline specification](specs/001-demo-baseline/spec.md).
