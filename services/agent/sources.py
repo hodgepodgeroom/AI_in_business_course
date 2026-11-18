@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 from model import chat, MATCH_SCHEMA
+from product_page import extract_product, RUB, exact_ruble_price
 from estimate import norm, ds, dec
 
 
@@ -98,17 +99,14 @@ def indexed_offer(entry, item, model):
     text = BeautifulSoup(
         entry["title"] + " " + entry.get("body", ""), "html.parser"
     ).get_text(" ", strip=True)
-    match = re.search(
-        r"(?:по\s+цене|цена\s*(?:от)?|цене\s*(?:от)?|за)\s*([0-9]+(?:[ \u00a0\u202f][0-9]{3})*(?:[.,][0-9]{1,2})?)",
-        text,
-        re.I,
+    match = next(
+        (
+            m
+            for m in RUB.finditer(text)
+            if exact_ruble_price(m["amount"], m.group(), text)
+        ),
+        None,
     )
-    if not match:
-        match = re.search(
-            r"([0-9]+(?:[ \u00a0\u202f][0-9]{3})*(?:[.,][0-9]{1,2})?)\s*(?:₽|руб)",
-            text,
-            re.I,
-        )
     if not match:
         return None
     # A local model checks product suitability; arithmetic and the quoted price stay in code.
@@ -159,95 +157,36 @@ def indexed_offer(entry, item, model):
 
 
 def fetch_page(url):
-    session = requests.Session()
-    session.headers["User-Agent"] = (
-        "OsnovaProcurementPrototype/0.1 (public product information)"
-    )
-    for _ in range(4):
-        if not public_url(url):
-            raise ValueError("Допускаются только публичные страницы товаров")
-        response = session.get(url, timeout=20, allow_redirects=False, stream=True)
-        if response.is_redirect:
-            url = urljoin(url, response.headers.get("Location", ""))
-            continue
-        if response.status_code in (403, 429):
-            return reader_page(url)
-        response.raise_for_status()
-        data = b""
-        for chunk in response.iter_content(32768):
-            data += chunk
-            if len(data) > 2500000:
-                raise ValueError("Страница слишком велика")
-        if "html" not in response.headers.get("content-type", "").lower():
-            raise ValueError("Не HTML-страница")
-        if not response.encoding or response.encoding == "ISO-8859-1":
-            response.encoding = "utf-8"
-        text = data.decode(response.encoding, errors="replace")
-        soup = BeautifulSoup(text, "html.parser")
-        structured = []
-        for s in soup.select('script[type="application/ld+json"]'):
-            try:
-                value = json.loads(s.string or s.get_text())
-                if any(t in str(value) for t in ("Product", "Offer")):
-                    structured.append(value)
-            except ValueError:
-                pass
-        title = (
-            soup.title.get_text(" ", strip=True)
-            if soup.title
-            else urlparse(url).hostname
+    with requests.Session() as session:
+        session.headers["User-Agent"] = (
+            "OsnovaProcurementPrototype/0.2 (public product information)"
         )
-        for s in soup(
-            ["script", "style", "nav", "header", "footer", "noscript", "svg"]
-        ):
-            s.decompose()
-        body = "\n".join(
-            line.strip() for line in soup.get_text("\n").splitlines() if line.strip()
-        )
-        source = (
-            title
-            + "\n"
-            + json.dumps(structured, ensure_ascii=False)[:9000]
-            + "\n"
-            + body[:22000]
-        )
-        return {
-            "url": url,
-            "title": title,
-            "text": source,
-            "supplier": urlparse(url).hostname.removeprefix("www."),
-        }
+        for _ in range(4):
+            if not public_url(url):
+                raise ValueError("Нет подтверждённого публичного адреса")
+            with session.get(
+                url, timeout=20, allow_redirects=False, stream=True
+            ) as response:
+                if response.is_redirect:
+                    url = urljoin(url, response.headers.get("Location", ""))
+                    continue
+                if response.status_code == 403:
+                    raise ValueError("Магазин закрыл доступ (HTTP 403)")
+                if response.status_code == 429:
+                    raise ValueError("Магазин ограничил частоту запросов (HTTP 429)")
+                response.raise_for_status()
+                if "html" not in response.headers.get("content-type", "").lower():
+                    raise ValueError("Источник не является HTML-карточкой")
+                data = bytearray()
+                for chunk in response.iter_content(32768):
+                    data.extend(chunk)
+                    if len(data) > 2500000:
+                        raise ValueError("Страница слишком велика")
+                encoding = response.encoding
+                html = (
+                    bytes(data)
+                    if not encoding or encoding.upper() == "ISO-8859-1"
+                    else data.decode(encoding, errors="replace")
+                )
+                return extract_product(html, url)
     raise ValueError("Слишком много переадресаций")
-
-
-def reader_page(url):
-    if not public_url(url):
-        raise ValueError("Непубличный адрес")
-    response = requests.get(
-        "https://r.jina.ai/" + url, headers={"X-No-Cache": "true"}, timeout=50
-    )
-    response.raise_for_status()
-    text = response.text[:50000]
-    if any(
-        s in norm(text)
-        for s in (
-            "captcha",
-            "access denied",
-            "enable javascript and cookies",
-            "checking your browser",
-            "target url returned error",
-            "отключите vpn",
-        )
-    ):
-        raise ValueError(
-            "Страница требует подтверждения доступа; автоматическое чтение остановлено"
-        )
-    if len(text) < 200:
-        raise ValueError("Нет читаемого содержимого")
-    return {
-        "url": url,
-        "title": text.splitlines()[0],
-        "text": text,
-        "supplier": urlparse(url).hostname.removeprefix("www."),
-        "read_method": "public_reader",
-    }
