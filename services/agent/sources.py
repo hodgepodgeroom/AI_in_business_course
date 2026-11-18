@@ -156,7 +156,7 @@ def indexed_offer(entry, item, model):
     }
 
 
-def fetch_page(url):
+def fetch_html(url):
     with requests.Session() as session:
         session.headers["User-Agent"] = (
             "OsnovaProcurementPrototype/0.2 (public product information)"
@@ -188,5 +188,29 @@ def fetch_page(url):
                     if not encoding or encoding.upper() == "ISO-8859-1"
                     else data.decode(encoding, errors="replace")
                 )
-                return extract_product(html, url)
+                return html, url
     raise ValueError("Слишком много переадресаций")
+
+
+def fetch_page(url):
+    html, final_url = fetch_html(url)
+    return extract_product(html, final_url)
+
+
+def local_catalog_links(item, city):
+    """Резервный публичный каталог для сценария закупки цемента в Казани."""
+    if norm(city) != "казань" or "цемент" not in norm(item["name"]):
+        return []
+    base = "https://kamacement.ru/catalog/cement-v-meshkah/"
+    html, final_url = fetch_html(base)
+    if final_url.rstrip("/") != base.rstrip("/"):
+        return []
+    soup = BeautifulSoup(html, "html.parser")
+    links = []
+    for link in soup.select(".product-item__name a[href]"):
+        url = urljoin(base, link["href"])
+        if url.startswith(base) and lexical_match(
+            item["name"], link.get_text(" ", strip=True)
+        ):
+            links.append(url)
+    return list(dict.fromkeys(links))

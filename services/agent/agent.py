@@ -16,7 +16,7 @@ from model import (
     QUOTE_SCHEMA,
     PACK_SCHEMA,
 )
-from sources import search_web, indexed_offer, fetch_page
+from sources import search_web, indexed_offer, fetch_page, local_catalog_links
 from product_page import RUB, exact_ruble_price, pack_supported
 
 LOG = logging.getLogger("osnova")
@@ -301,11 +301,14 @@ class Agent:
                             f"{page['supplier']}: подходящая цена и фасовка не подтверждены"
                         )
 
+            def has_offer():
+                return any(
+                    o.get("fits") and o.get("availability") != "out_of_stock"
+                    for o in item["offers"]
+                )
+
             collect(explicit_urls)
-            if not any(
-                o.get("fits") and o.get("availability") != "out_of_stock"
-                for o in item["offers"]
-            ):
+            if not has_offer():
                 try:
                     found = search_web(item["query"], p["city"]) or []
                 except Exception as error:
@@ -313,10 +316,14 @@ class Agent:
                     diagnostics.append("Поиск поставщиков недоступен")
                     found = []
                 collect([entry["href"] for entry in found if entry.get("href")])
-                if not any(
-                    o.get("fits") and o.get("availability") != "out_of_stock"
-                    for o in item["offers"]
-                ):
+                if not has_offer():
+                    try:
+                        collect(local_catalog_links(item, p["city"]))
+                    except (requests.RequestException, ValueError, OSError) as error:
+                        diagnostics.append(
+                            f"Резервный каталог недоступен: {type(error).__name__}"
+                        )
+                if not has_offer():
                     for entry in found[:5]:
                         try:
                             hint = indexed_offer(entry, item, self.model)

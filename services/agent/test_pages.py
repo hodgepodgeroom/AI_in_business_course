@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import Mock, patch
 from agent import Agent, offers_from_page
 from product_page import extract_product, exact_ruble_price, pack_supported
-from sources import fetch_page
+from sources import fetch_page, local_catalog_links
 
 URL = "https://supplier.example/cement"
 NAME = "Цемент М500, мешок 50 кг"
@@ -94,3 +94,16 @@ class PageTests(unittest.TestCase):
         self.assertEqual(fetch.call_count, 3)
         self.assertEqual(result["goods_total"], "3450")
         self.assertIsNone(result["delivery_total"])
+
+
+class CatalogTests(unittest.TestCase):
+    @patch("sources.fetch_html")
+    def test_catalog_fallback_keeps_matching_pack_and_region(self, fetch):
+        root = "https://kamacement.ru/catalog/cement-v-meshkah/"
+        fetch.return_value = (
+            '<div class="product-item__name"><a href="p50/">Цемент М500 50 кг</a><a href="p25/">Цемент М500 25 кг</a></div>',
+            root,
+        )
+        self.assertEqual(local_catalog_links(ITEM, "Москва"), [])
+        fetch.assert_not_called()
+        self.assertEqual(local_catalog_links(ITEM, "Казань"), [root + "p50/"])
