@@ -1,35 +1,16 @@
-# 001 · Demo baseline
+# 001 · Подготовка закупочной заявки
+Пользователь вводит список материалов с количеством, городом, адресом и сроком. Рабочее место сохраняет заявку. Локальный обработчик получает её из очереди и передаёт текст модели на этом компьютере. Смета показывает основания для выбора, цену упаковки и вопросы к поставщику. Решение о покупке принимает человек.
 
-**Status** — Draft, awaiting source import  
-**Source for this draft** — [repository description](../../README.md)
-
-## Product intent
-
-Help construction workers track materials and purchase them through different
-interfaces. The repository description establishes that goal. The imported
-demo will determine the scope of this baseline.
-
-## Candidate scenarios to confirm
-
-| ID | Product intent | Evidence to gather from the demo |
-| --- | --- | --- |
-| SC-01 | Keep track of construction materials. | Identify the entry point, available material actions, and the observable effect of each supported action. |
-| SC-02 | Purchase materials. | Identify how a purchase starts, the stages a user can complete, and where any simulated behavior begins. |
-| SC-03 | Support different interfaces. | Inventory the interfaces present in the demo and map each supported scenario to its entry point. |
-
-## Import and verification
-
-1. Inventory the source, assets, dependency manifests, and demo data. Record any
-   local-only configuration the recipient needs to recreate.
-2. Import the project and capture the commands needed to install, run, and
-   verify it. Record the Git revision used for the baseline.
-3. Trace the available flows to their implementation. Run the demo and record
-   the observed behavior, including any mocks or external dependencies.
-4. Replace candidate scenarios with confirmed requirements and acceptance
-   criteria. Record steps and results for every check performed.
-
-| Check | Result |
+| Критерий | Как проверить |
 | --- | --- |
-| Source inventory and import | Pending |
-| Startup and reproducible run instructions | Pending |
-| Scenario verification | Pending |
+| AC-01 | После создания черновика его можно отправить в очередь. Название и исходный текст сохраняются после повторного открытия базы. |
+| AC-02 | Из двух обработчиков заявку получает один. Завершение по устаревшей аренде отклоняется. |
+| AC-03 | При нехватке данных смета содержит вопросы. Неполную смету нельзя согласовать. Подтверждённую смету можно передать на согласование и утвердить с комментарием. |
+| AC-04 | Локальная модель получает запрос по HTTP и возвращает JSON по схеме. Исходники работают с настраиваемой моделью и адресом сервера. |
+| AC-05 | CLI на учебном примере учитывает остатки, ожидаемые поставки, кратность упаковки и доставку, формирует отчёт на 12 440 ₽. |
+| AC-06 | Веб-интерфейс собирается, открывает личный список заявок и выгружает выбранную смету в CSV. |
+| AC-07 | Вложение можно привязать только к собственной заявке. Текстовый обработчик сообщает об изображении или документе без читаемого текста. |
+
+**Статус на 18 ноября 2026 года:** проверено частично. [План](plan.md) · [Протокол приёмки](verification.md) · [Архитектура](../../docs/architecture.md)
+
+Заявки сохраняют владельца, дату создания и изменения, исходное задание и результат. Пользователь видит предупреждения по неполным условиям. Подробности статусов и API приведены в архитектуре. Реальная отправка заказа и совместное согласование несколькими аккаунтами находятся за пределами этой версии.

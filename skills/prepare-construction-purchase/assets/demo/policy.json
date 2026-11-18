@@ -1,0 +1,22 @@
+{
+  "demo": true,
+  "rules": {
+    "reserve_pct": "5",
+    "max_reserve_pct": "5",
+    "max_quote_age_days": 7,
+    "stock_max_age_days": 2,
+    "consumption_tolerance_pct": "10",
+    "source": "policy"
+  },
+  "inventory_snapshot": {
+    "known": true,
+    "as_of": "2026-11-12",
+    "source": "stock",
+    "includes_received_orders": true
+  },
+  "orders_snapshot": {
+    "known": true,
+    "source": "orders",
+    "as_of": "2026-11-12"
+  }
+}

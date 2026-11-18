@@ -1,0 +1,367 @@
+{
+  "schema_version": 1,
+  "demo": true,
+  "as_of": "2026-11-12",
+  "project": {
+    "id": "DEMO-001",
+    "name": "Учебный объект · отделка этажа",
+    "address": "Демонстрационный адрес, корпус 1",
+    "delivery_date": "2026-11-20",
+    "budget": "12000",
+    "remaining_scope_confirmed": true,
+    "source": "task"
+  },
+  "rules": {
+    "reserve_pct": "5",
+    "max_reserve_pct": "5",
+    "max_quote_age_days": 7,
+    "stock_max_age_days": 2,
+    "consumption_tolerance_pct": "10",
+    "source": "policy"
+  },
+  "sources": [
+    {
+      "id": "task",
+      "title": "Учебное задание",
+      "locator": "assets/demo/input.json#works",
+      "demo": true
+    },
+    {
+      "id": "norms",
+      "title": "Учебные нормы, не для строительства",
+      "locator": "assets/demo/input.json#norms",
+      "demo": true
+    },
+    {
+      "id": "catalog",
+      "title": "Учебный каталог",
+      "locator": "assets/demo/input.json#materials",
+      "demo": true
+    },
+    {
+      "id": "stock",
+      "title": "Учебный складской снимок",
+      "locator": "assets/demo/input.json#inventory",
+      "demo": true
+    },
+    {
+      "id": "orders",
+      "title": "Учебный реестр заказов",
+      "locator": "assets/demo/input.json#orders",
+      "demo": true
+    },
+    {
+      "id": "usage",
+      "title": "Учебная выдача материалов",
+      "locator": "assets/demo/input.json#consumption",
+      "demo": true
+    },
+    {
+      "id": "policy",
+      "title": "Учебные правила",
+      "locator": "assets/demo/input.json#rules",
+      "demo": true
+    },
+    {
+      "id": "quotes",
+      "title": "Учебные предложения, не реальные цены",
+      "locator": "assets/demo/input.json#offers",
+      "demo": true
+    }
+  ],
+  "works": [
+    {
+      "id": "W1",
+      "kind": "plaster",
+      "quantity": "120",
+      "unit": "m2",
+      "source": "task"
+    },
+    {
+      "id": "W2",
+      "kind": "priming",
+      "quantity": "120",
+      "unit": "m2",
+      "source": "task"
+    }
+  ],
+  "norms": [
+    {
+      "id": "N1",
+      "work_kind": "plaster",
+      "work_unit": "m2",
+      "material_id": "plaster",
+      "rate": "8.5",
+      "material_unit": "kg",
+      "source": "norms"
+    },
+    {
+      "id": "N2",
+      "work_kind": "priming",
+      "work_unit": "m2",
+      "material_id": "primer",
+      "rate": "0.2",
+      "material_unit": "l",
+      "source": "norms"
+    }
+  ],
+  "materials": [
+    {
+      "id": "plaster",
+      "name": "Штукатурка гипсовая, 30 кг",
+      "unit": "kg",
+      "pack_size": "30",
+      "requirements": {
+        "type": "gypsum"
+      },
+      "source": "catalog"
+    },
+    {
+      "id": "primer",
+      "name": "Грунтовка глубокого проникновения, 10 л",
+      "unit": "l",
+      "pack_size": "10",
+      "requirements": {
+        "type": "deep"
+      },
+      "source": "catalog"
+    }
+  ],
+  "inventory": {
+    "known": true,
+    "as_of": "2026-11-12",
+    "source": "stock",
+    "items": [
+      {
+        "id": "S1",
+        "material_id": "plaster",
+        "quantity": "120",
+        "reserved": "30",
+        "unit": "kg",
+        "source": "stock"
+      },
+      {
+        "id": "S2",
+        "material_id": "primer",
+        "quantity": "10",
+        "reserved": "0",
+        "unit": "l",
+        "source": "stock"
+      }
+    ],
+    "includes_received_orders": true
+  },
+  "orders": {
+    "known": true,
+    "source": "orders",
+    "items": [
+      {
+        "order_line_id": "O1",
+        "material_id": "plaster",
+        "quantity": "300",
+        "received": "60",
+        "status": "confirmed",
+        "delivery_date": "2026-11-19",
+        "unit": "kg",
+        "source": "orders"
+      },
+      {
+        "order_line_id": "O1",
+        "material_id": "plaster",
+        "quantity": "300",
+        "received": "60",
+        "status": "confirmed",
+        "delivery_date": "2026-11-19",
+        "unit": "kg",
+        "source": "orders"
+      },
+      {
+        "order_line_id": "O2",
+        "material_id": "primer",
+        "quantity": "10",
+        "received": "0",
+        "status": "confirmed",
+        "delivery_date": "2026-11-23",
+        "unit": "l",
+        "source": "orders"
+      }
+    ],
+    "as_of": "2026-11-12"
+  },
+  "consumption": {
+    "known": true,
+    "source": "usage",
+    "items": [
+      {
+        "id": "C1",
+        "material_id": "plaster",
+        "issued": "600",
+        "completed_norm_quantity": "500",
+        "unit": "kg",
+        "source": "usage"
+      }
+    ]
+  },
+  "suppliers": [
+    {
+      "id": "A",
+      "name": "Учебный поставщик А",
+      "delivery_cost": "2000",
+      "source": "quotes"
+    },
+    {
+      "id": "B",
+      "name": "Учебный поставщик Б",
+      "delivery_cost": "500",
+      "source": "quotes"
+    },
+    {
+      "id": "C",
+      "name": "Учебный поставщик В",
+      "delivery_cost": null,
+      "source": "quotes"
+    }
+  ],
+  "offers": [
+    {
+      "id": "A-plaster",
+      "material_id": "plaster",
+      "supplier_id": "A",
+      "product_name": "Штукатурка гипсовая, 30 кг",
+      "unit": "kg",
+      "pack_size": "30",
+      "price_per_pack": "400",
+      "currency": "RUB",
+      "tax_included": true,
+      "available_qty": "3000",
+      "delivery_date": "2026-11-19",
+      "verified_at": "2026-11-12",
+      "price_confirmed": true,
+      "specs": {
+        "type": "gypsum"
+      },
+      "product_url": null,
+      "source": "quotes"
+    },
+    {
+      "id": "A-primer",
+      "material_id": "primer",
+      "supplier_id": "A",
+      "product_name": "Грунтовка глубокого проникновения, 10 л",
+      "unit": "l",
+      "pack_size": "10",
+      "price_per_pack": "700",
+      "currency": "RUB",
+      "tax_included": true,
+      "available_qty": "3000",
+      "delivery_date": "2026-11-19",
+      "verified_at": "2026-11-12",
+      "price_confirmed": true,
+      "specs": {
+        "type": "deep"
+      },
+      "product_url": null,
+      "source": "quotes"
+    },
+    {
+      "id": "B-plaster",
+      "material_id": "plaster",
+      "supplier_id": "B",
+      "product_name": "Штукатурка гипсовая, 30 кг",
+      "unit": "kg",
+      "pack_size": "30",
+      "price_per_pack": "420",
+      "currency": "RUB",
+      "tax_included": true,
+      "available_qty": "3000",
+      "delivery_date": "2026-11-19",
+      "verified_at": "2026-11-12",
+      "price_confirmed": true,
+      "specs": {
+        "type": "gypsum"
+      },
+      "product_url": null,
+      "source": "quotes"
+    },
+    {
+      "id": "B-primer",
+      "material_id": "primer",
+      "supplier_id": "B",
+      "product_name": "Грунтовка глубокого проникновения, 10 л",
+      "unit": "l",
+      "pack_size": "10",
+      "price_per_pack": "720",
+      "currency": "RUB",
+      "tax_included": true,
+      "available_qty": "3000",
+      "delivery_date": "2026-11-19",
+      "verified_at": "2026-11-12",
+      "price_confirmed": true,
+      "specs": {
+        "type": "deep"
+      },
+      "product_url": null,
+      "source": "quotes"
+    },
+    {
+      "id": "C-plaster",
+      "material_id": "plaster",
+      "supplier_id": "C",
+      "product_name": "Штукатурка гипсовая, 30 кг",
+      "unit": "kg",
+      "pack_size": "30",
+      "price_per_pack": "350",
+      "currency": "RUB",
+      "tax_included": true,
+      "available_qty": "3000",
+      "delivery_date": "2026-11-19",
+      "verified_at": "2026-11-12",
+      "price_confirmed": true,
+      "specs": {
+        "type": "gypsum"
+      },
+      "product_url": null,
+      "source": "quotes"
+    },
+    {
+      "id": "C-primer",
+      "material_id": "primer",
+      "supplier_id": "C",
+      "product_name": "Грунтовка глубокого проникновения, 10 л",
+      "unit": "l",
+      "pack_size": "10",
+      "price_per_pack": "650",
+      "currency": "RUB",
+      "tax_included": true,
+      "available_qty": "3000",
+      "delivery_date": "2026-11-19",
+      "verified_at": "2026-11-12",
+      "price_confirmed": true,
+      "specs": {
+        "type": "deep"
+      },
+      "product_url": null,
+      "source": "quotes"
+    },
+    {
+      "id": "A-unconfirmed",
+      "material_id": "plaster",
+      "supplier_id": "A",
+      "product_name": "Штукатурка гипсовая, 30 кг",
+      "unit": "kg",
+      "pack_size": "30",
+      "price_per_pack": "300",
+      "currency": "RUB",
+      "tax_included": true,
+      "available_qty": "3000",
+      "delivery_date": "2026-11-19",
+      "verified_at": "2026-11-12",
+      "price_confirmed": false,
+      "specs": {
+        "type": "gypsum"
+      },
+      "product_url": null,
+      "source": "quotes"
+    }
+  ]
+}

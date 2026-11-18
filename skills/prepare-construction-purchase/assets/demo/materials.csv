@@ -1,0 +1,3 @@
+﻿id;name;unit;pack_size;requirements;source
+plaster;Штукатурка гипсовая, 30 кг;kg;30;"{""type"": ""gypsum""}";catalog
+primer;Грунтовка глубокого проникновения, 10 л;l;10;"{""type"": ""deep""}";catalog

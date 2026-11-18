@@ -1,38 +1,23 @@
-# Feature title
+# Номер и название возможности
 
-**Status** — Draft
+**Статус:** проект / в работе / проверено частично / принято.
 
-## Problem
+## Задача и границы
 
-Who needs this and what outcome are they trying to achieve?
+Кто выполняет действие? Какой результат он получит? Что относится к следующему этапу?
 
-## Scope
+## Требования и приёмка
 
-Which user flows, interfaces, or data are affected?
-
-## Requirements
-
-| ID | Expected behavior |
-| --- | --- |
-| REQ-01 | Describe the user-visible behavior and any relevant constraints. |
-
-## Acceptance criteria
-
-| ID | Requirement | Setup and action | Expected result |
+| Критерий | Исходное состояние и действие | Ожидаемый результат | Ошибка или граничный случай |
 | --- | --- | --- | --- |
-| AC-01 | REQ-01 | Specify the test data or starting state and the action to perform. | Describe the observable result. |
+| AC-01 | Указать воспроизводимый вход | Указать наблюдаемый результат | Указать, что увидит пользователь |
 
-## Implementation plan
+## План
 
-Describe the affected components and the intended changes. Capture data,
-configuration, and integration decisions as applicable.
+Перечислить компоненты, изменения схемы и API, миграцию существующих данных, конфигурацию и порядок внедрения. Зафиксировать решение по открытым вопросам.
 
-## Verification
+## Проверка
 
-| Criterion | Test, command, or manual steps | Observed result |
+| Критерий | Команда или действия | Результат и окружение |
 | --- | --- | --- |
-| AC-01 | Add a reproducible check. | Pending |
-
-## Open questions
-
-Record decisions that still affect the scope or verification.
+| AC-01 | Указать конкретную проверку | Указать наблюдение и оставшееся ограничение |

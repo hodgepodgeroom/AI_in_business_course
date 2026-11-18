@@ -1,0 +1,8 @@
+﻿id;material_id;supplier_id;product_name;unit;pack_size;price_per_pack;currency;tax_included;available_qty;delivery_date;verified_at;price_confirmed;specs;product_url;source
+A-plaster;plaster;A;Штукатурка гипсовая, 30 кг;kg;30;400;RUB;True;3000;2026-11-19;2026-11-12;True;"{""type"": ""gypsum""}";;quotes
+A-primer;primer;A;Грунтовка глубокого проникновения, 10 л;l;10;700;RUB;True;3000;2026-11-19;2026-11-12;True;"{""type"": ""deep""}";;quotes
+B-plaster;plaster;B;Штукатурка гипсовая, 30 кг;kg;30;420;RUB;True;3000;2026-11-19;2026-11-12;True;"{""type"": ""gypsum""}";;quotes
+B-primer;primer;B;Грунтовка глубокого проникновения, 10 л;l;10;720;RUB;True;3000;2026-11-19;2026-11-12;True;"{""type"": ""deep""}";;quotes
+C-plaster;plaster;C;Штукатурка гипсовая, 30 кг;kg;30;350;RUB;True;3000;2026-11-19;2026-11-12;True;"{""type"": ""gypsum""}";;quotes
+C-primer;primer;C;Грунтовка глубокого проникновения, 10 л;l;10;650;RUB;True;3000;2026-11-19;2026-11-12;True;"{""type"": ""deep""}";;quotes
+A-unconfirmed;plaster;A;Штукатурка гипсовая, 30 кг;kg;30;300;RUB;True;3000;2026-11-19;2026-11-12;False;"{""type"": ""gypsum""}";;quotes

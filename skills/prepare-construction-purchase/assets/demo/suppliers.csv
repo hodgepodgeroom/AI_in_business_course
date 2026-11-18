@@ -1,0 +1,4 @@
+﻿id;name;delivery_cost;source
+A;Учебный поставщик А;2000;quotes
+B;Учебный поставщик Б;500;quotes
+C;Учебный поставщик В;;quotes
