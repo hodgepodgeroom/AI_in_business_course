@@ -909,6 +909,14 @@ export default function Workspace({ local = false } = {}) {
                                           <ExternalLink size={12} />
                                         </a>
                                         <small>{i.selected.product_name}</small>
+                                        {i.selected.price_source_url && (
+                                          <small>
+                                            <a href={safeLink(i.selected.price_source_url)} target="_blank" rel="noreferrer">
+                                              Цена в JSON ↗
+                                            </a>
+                                            {" · "}{i.selected.price_region || "город не подтверждён"}
+                                          </small>
+                                        )}
                                         {i.selected.source_status ===
                                           "search_index" && (
                                           <small className="warn-text">

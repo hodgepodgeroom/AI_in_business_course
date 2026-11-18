@@ -23,6 +23,8 @@ export interface Offer {
   url: string;
   product_name: string;
   source_status: string;
+  price_source_url?: string | null;
+  price_region?: string | null;
   availability: string;
   unit_price: string;
   goods_total: string;
