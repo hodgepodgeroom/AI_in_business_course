@@ -2,7 +2,7 @@ import json
 import unittest
 from unittest.mock import Mock, patch
 from agent import Agent, offers_from_page
-from product_page import extract_product, exact_ruble_price, pack_supported
+from product_page import extract_product, exact_ruble_price, units_per_pack
 from sources import fetch_page, local_catalog_links
 
 URL = "https://supplier.example/cement"
@@ -58,9 +58,8 @@ class PageTests(unittest.TestCase):
         self.assertFalse(exact_ruble_price(575, "575 ₽", "Цена от 575 ₽"))
 
         self.assertFalse(exact_ruble_price(575, "575 ₽", "Товар 1 575 ₽"))
-        self.assertTrue(pack_supported(1, "мешок", "мешок 50 кг"))
-        self.assertFalse(pack_supported(50, "мешок", "мешок 50 кг"))
-        self.assertTrue(pack_supported(50, "кг", "мешок 50 кг"))
+        self.assertEqual(units_per_pack("мешок 50 кг", "мешок"), 1)
+        self.assertEqual(units_per_pack("мешок 50 кг", "кг"), 50)
 
     def test_challenge_is_not_product(self):
         with self.assertRaisesRegex(ValueError, "проверки доступа"):

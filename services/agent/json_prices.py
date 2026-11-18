@@ -113,6 +113,8 @@ def regional_offer(rule, soup, url, city, fetch_json):
             f"{fields['price']} = {amount} {currency}, SKU {sku}, регион {region}",
             city,
         )
+        if rule.get("cart"):
+            offer["cart"] = (rule["cart"], sku, region)
         compare_visible(soup, rule.get("visible_price_selector"), offer)
         return offer
     except (AttributeError, IndexError, KeyError, TypeError) as error:
@@ -203,3 +205,48 @@ def woo_offer(soup, url, fetch_json):
     offer["quantity_limits"] = woo_limits(soup, record)
     compare_visible(soup, ".summary > .price, .summary > div > p.price", offer)
     return offer
+
+
+def confirm_cart(offer, packs, url, fetch_json):
+    """Check the supplier's read-only quote for this SKU, region and pack count."""
+    cart = offer.get("cart")
+    if not cart:
+        return {}
+    rule, sku, region = cart
+    try:
+        path = rule["path"]
+        if not path.startswith("/") or not all(
+            key in path for key in ("{sku}", "{region}", "{packs}")
+        ):
+            raise ValueError("Не задан путь расчёта корзины")
+        endpoint = urljoin(
+            url,
+            path.format(
+                sku=quote(sku, safe=""), region=quote(region, safe=""), packs=packs
+            ),
+        )
+        data, endpoint = fetch_json(endpoint, url)
+        fields = rule["fields"]
+        if (
+            str(field(data, fields["sku"])) != sku
+            or str(field(data, fields["region"])) != region
+            or dec(field(data, fields["packs"])) != packs
+            or field(data, fields["currency"]) != "RUB"
+        ):
+            raise ValueError("Параметры корзины не совпали с заявкой")
+        amount = dec(field(data, fields["goods_total"]))
+        if amount != dec(offer["price"]) * packs:
+            raise ValueError(
+                f"Корзина поставщика вернула другую сумму за товар — {ds(amount)} ₽"
+            )
+        return dict(
+            cart_url=endpoint,
+            cart_goods_total=ds(amount),
+            source_status="opened_page",
+            reason=f"Сумма за {packs} упак. подтверждена расчётом корзины",
+        )
+    except (ValueError, KeyError, TypeError, OSError) as exc:
+        return dict(
+            source_status="needs_confirmation",
+            reason=f"Требуется подтвердить расчёт корзины: {exc}",
+        )

@@ -909,6 +909,13 @@ export default function Workspace({ local = false } = {}) {
                                           <ExternalLink size={12} />
                                         </a>
                                         <small>{i.selected.product_name}</small>
+                                        {Number(i.selected.excess_quantity) > 0 && (
+                                          <small>
+                                            {i.selected.packs} упак. · к покупке{" "}
+                                            {i.selected.purchase_quantity} {i.unit},
+                                            остаток {i.selected.excess_quantity} {i.unit}
+                                          </small>
+                                        )}
                                         {i.selected.price_source_url && (
                                           <small>
                                             <a href={safeLink(i.selected.price_source_url)} target="_blank" rel="noreferrer">
@@ -1006,6 +1013,13 @@ export default function Workspace({ local = false } = {}) {
                                   </a>
                                   <p>{o.product_name}</p>
                                   <small>{o.reason}</small>
+                                  {o.cart_url && (
+                                    <small>
+                                      <a href={safeLink(o.cart_url)} target="_blank" rel="noreferrer">
+                                        Расчёт корзины ↗
+                                      </a>
+                                    </small>
+                                  )}
                                 </div>
                                 <div>
                                   <b>{money(o.unit_price)}</b>
@@ -1030,9 +1044,11 @@ export default function Workspace({ local = false } = {}) {
                                 <span className="state">
                                   {i.selected?.id === o.id
                                     ? "Предложено"
-                                    : o.fits
-                                      ? "Альтернатива"
-                                      : "Не подходит"}
+                                    : ["needs_confirmation", "search_index"].includes(o.source_status)
+                                      ? "Уточнить цену"
+                                      : o.fits
+                                        ? "Альтернатива"
+                                        : "Не подходит"}
                                 </span>
                               </div>
                             ))

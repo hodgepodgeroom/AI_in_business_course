@@ -3,6 +3,7 @@
 import re, socket, ipaddress, json, uuid
 from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 from urllib.parse import urlparse, urljoin
 import xml.etree.ElementTree as ET
 import requests
@@ -54,11 +55,40 @@ def search_web(name, city):
             }
             for n in root.findall(".//item")
         ]
+        results = relevant_results(results, name)
         if results:
             return results[:6]
     except (requests.RequestException, ET.ParseError):
         pass
-    return DDGS(timeout=20).text(query, region="ru-ru", max_results=5)
+    return relevant_results(
+        DDGS(timeout=20).text(query, region="ru-ru", max_results=8), name
+    )[:6]
+
+
+def relevant_results(results, name):
+    tokens = [
+        w[:4]
+        for w in re.findall(r"[а-яёa-z]{3,}", norm(name))
+        if w not in {"мешок", "упаковка", "для", "штук"}
+    ]
+    return [
+        entry
+        for entry in results or []
+        if entry.get("href")
+        and any(
+            word in norm(entry.get("title", "") + " " + entry.get("body", ""))
+            for word in tokens
+        )
+    ]
+
+
+def registered_links(item, city, extra):
+    rows = json.loads(Path(__file__).with_name("supplier_catalog.json").read_text())
+    return [
+        row["url"]
+        for row in [*rows, *extra]
+        if norm(row["city"]) == norm(city) and lexical_match(item["name"], row["name"])
+    ]
 
 
 def lexical_match(request, title):
@@ -157,7 +187,7 @@ def indexed_offer(entry, item, model):
     }
 
 
-def fetch_document(url, json_origin=None):
+def fetch_document(url, json_origin=None, *, xml=False):
     with requests.Session() as session:
         session.headers["User-Agent"] = (
             "OsnovaProcurementPrototype/0.2 (public product information)"
@@ -190,13 +220,20 @@ def fetch_document(url, json_origin=None):
                     mime == "application/json" or mime.endswith("+json")
                 ):
                     raise ValueError("Источник не вернул JSON")
-                if not json_origin and "html" not in mime:
+                if xml and not (
+                    mime in ("application/xml", "text/xml", "application/octet-stream")
+                    or mime.endswith("+xml")
+                ):
+                    raise ValueError("Источник не вернул товарный фид XML")
+                if not xml and not json_origin and "html" not in mime:
                     raise ValueError("Источник не является HTML-карточкой")
                 data = bytearray()
                 for chunk in response.iter_content(32768):
                     data.extend(chunk)
                     if len(data) > 2500000:
                         raise ValueError("Страница слишком велика")
+                if xml:
+                    return bytes(data), url
                 if json_origin:
                     try:
                         record = json.loads(data, parse_float=Decimal)
@@ -244,6 +281,30 @@ def supplier_price(soup, url, city, suppliers):
         raise
     except ValueError as error:
         raise JsonPriceError(str(error)) from error
+
+
+def feed_links(feed_url, item):
+    data, url = fetch_document(feed_url, xml=True)
+    if b"<!ENTITY" in data.upper():
+        raise ValueError("Фид содержит объявления сущностей")
+    try:
+        root = ET.fromstring(data)
+    except ET.ParseError as error:
+        raise ValueError("Некорректный XML каталога") from error
+    links = []
+    for entry in root.findall("./shop/offers/offer"):
+        if entry.get("available") == "false" or not entry.findtext("url"):
+            continue
+        name = entry.findtext("name") or " ".join(
+            entry.findtext(key, "") for key in ("typePrefix", "vendor", "model")
+        )
+        if lexical_match(item["name"], name):
+            link = urljoin(url, entry.findtext("url").strip())
+            if urlparse(link).scheme in ("https", "http") and link not in links:
+                links.append(link)
+            if len(links) == 6:
+                break
+    return links
 
 
 def local_catalog_links(item, city):

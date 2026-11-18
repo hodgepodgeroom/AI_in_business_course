@@ -29,6 +29,9 @@ export interface Offer {
   unit_price: string;
   goods_total: string;
   purchase_quantity: string;
+  excess_quantity?: string;
+  packs?: number;
+  cart_url?: string;
   delivery_cost: string | null;
   delivery_date: string | null;
   reason: string;
