@@ -9,6 +9,7 @@ import requests
 from bs4 import BeautifulSoup
 from ddgs import DDGS
 from model import chat, MATCH_SCHEMA
+from json_prices import JsonPriceError, origin, regional_offer, woo_offer
 from product_page import extract_product, RUB, exact_ruble_price
 from estimate import norm, ds, dec
 
@@ -156,12 +157,16 @@ def indexed_offer(entry, item, model):
     }
 
 
-def fetch_html(url):
+def fetch_document(url, json_origin=None):
     with requests.Session() as session:
         session.headers["User-Agent"] = (
             "OsnovaProcurementPrototype/0.2 (public product information)"
         )
         for _ in range(4):
+            if json_origin and (
+                origin(url) != origin(json_origin) or origin(url)[0] != "https"
+            ):
+                raise ValueError("JSON должен находиться на HTTPS-сайте поставщика")
             if not public_url(url):
                 raise ValueError("Нет подтверждённого публичного адреса")
             with session.get(
@@ -175,13 +180,31 @@ def fetch_html(url):
                 if response.status_code == 429:
                     raise ValueError("Магазин ограничил частоту запросов (HTTP 429)")
                 response.raise_for_status()
-                if "html" not in response.headers.get("content-type", "").lower():
+                mime = (
+                    response.headers.get("content-type", "")
+                    .split(";")[0]
+                    .strip()
+                    .lower()
+                )
+                if json_origin and not (
+                    mime == "application/json" or mime.endswith("+json")
+                ):
+                    raise ValueError("Источник не вернул JSON")
+                if not json_origin and "html" not in mime:
                     raise ValueError("Источник не является HTML-карточкой")
                 data = bytearray()
                 for chunk in response.iter_content(32768):
                     data.extend(chunk)
                     if len(data) > 2500000:
                         raise ValueError("Страница слишком велика")
+                if json_origin:
+                    try:
+                        record = json.loads(data, parse_float=Decimal)
+                    except (ValueError, RecursionError) as error:
+                        raise ValueError("Некорректный JSON магазина") from error
+                    if not isinstance(record, dict):
+                        raise ValueError("Ожидался один объект товара")
+                    return record, url
                 encoding = response.encoding
                 html = (
                     bytes(data)
@@ -192,9 +215,35 @@ def fetch_html(url):
     raise ValueError("Слишком много переадресаций")
 
 
-def fetch_page(url):
+def fetch_html(url):
+    return fetch_document(url)
+
+
+def fetch_page(url, city="", suppliers=None):
     html, final_url = fetch_html(url)
-    return extract_product(html, final_url)
+    return extract_product(
+        html,
+        final_url,
+        json_loader=lambda soup: supplier_price(soup, final_url, city, suppliers),
+    )
+
+
+def supplier_price(soup, url, city, suppliers):
+    rule = (suppliers or {}).get(urlparse(url).hostname)
+    try:
+        if rule is not None:
+            return regional_offer(rule, soup, url, city, fetch_document)
+        return woo_offer(soup, url, fetch_document)
+    except requests.HTTPError as error:
+        if (
+            rule is None
+            and error.response is not None
+            and error.response.status_code in (404, 405, 410)
+        ):
+            return None
+        raise
+    except ValueError as error:
+        raise JsonPriceError(str(error)) from error
 
 
 def local_catalog_links(item, city):

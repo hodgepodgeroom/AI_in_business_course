@@ -47,6 +47,23 @@ def pack_supported(quantity, unit, evidence):
     return quantity in amounts if amounts else quantity == 1
 
 
+def matching_pack_size(request, name, unit):
+    if unit not in ("мешок", "уп", "шт"):
+        return True
+    # Обязательная масса или объём упаковки, включая записи «50кг» и «0,5 л».
+    measure = re.compile(r"(?<![\w.,])(\d+(?:[.,]\d+)?)\s*(кг|мл|л|г)(?!\w)", re.I)
+
+    def amounts(text):
+        result = set()
+        for number, symbol in measure.findall(norm(text)):
+            base = "г" if symbol in ("кг", "г") else "мл"
+            value = dec(number) * (1000 if symbol in ("кг", "л") else 1)
+            result.add((base, value))
+        return result
+
+    return amounts(request) <= amounts(name)
+
+
 def products(node):
     if isinstance(node, list):
         for entry in node:
@@ -58,7 +75,7 @@ def products(node):
         yield from products(node.get("@graph"))
 
 
-def extract_product(html, url):
+def extract_product(html, url, json_loader=None):
     soup = BeautifulSoup(html, "html.parser")
     heading = soup.h1 or soup.title
     title = heading.get_text(" ", strip=True) if heading else ""
@@ -68,6 +85,15 @@ def extract_product(html, url):
         re.I,
     ):
         raise ValueError("Страница проверки доступа")
+    external = json_loader(soup) if json_loader else None
+    if external:
+        return {
+            "title": title,
+            "text": external["name"],
+            "url": url,
+            "supplier": urlsplit(url).hostname.removeprefix("www."),
+            "offer": external,
+        }
     records = []
     for script in soup.select('script[type="application/ld+json"]'):
         try:

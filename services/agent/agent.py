@@ -1,6 +1,7 @@
 """Обработка заявок из очереди веб-приложения."""
 
 import argparse, json, logging, re, threading, uuid
+from decimal import ROUND_CEILING
 from datetime import date, datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
@@ -17,7 +18,8 @@ from model import (
     PACK_SCHEMA,
 )
 from sources import search_web, indexed_offer, fetch_page, local_catalog_links
-from product_page import RUB, exact_ruble_price, pack_supported
+from json_prices import JsonPriceError, quantity_problem
+from product_page import RUB, exact_ruble_price, matching_pack_size, pack_supported
 
 LOG = logging.getLogger("osnova")
 
@@ -25,6 +27,10 @@ LOG = logging.getLogger("osnova")
 def offers_from_page(page, item, p, model):
     offer = page.get("offer")
     if offer:
+        if offer.get("price_source_url") and not matching_pack_size(
+            item["name"], offer["name"], item["unit"]
+        ):
+            return
         prompt = (
             f"Нужен товар: {item['name']}. Требования: {item['requirements']}. "
             f"Единица заявки: {item['unit']}. Карточка: {offer['name']}. "
@@ -45,15 +51,23 @@ def offers_from_page(page, item, p, model):
             return
         if not pack_supported(pack, item["unit"], evidence):
             return
+        quantity_issue = quantity_problem(
+            offer.get("quantity_limits", []),
+            (dec(item["quantity"]) / pack).to_integral_value(rounding=ROUND_CEILING),
+        )
         yield dict(
             id=str(uuid.uuid4()),
             supplier=page["supplier"],
             url=page["url"],
             source_status="opened_page",
             product_name=offer["name"],
-            fits=True,
-            reason="Цена поставщика в карточке; фасовка: " + evidence,
-            price_evidence=f"Offer.price = {offer['price']} RUB",
+            fits=quantity_issue is None,
+            reason=quantity_issue or "Фасовка поставщика: " + evidence,
+            price_evidence=offer.get(
+                "price_evidence", f"Offer.price = {offer['price']} RUB"
+            ),
+            price_source_url=offer.get("price_source_url"),
+            price_region=offer.get("price_region"),
             pack_price=offer["price"],
             pack_quantity=ds(pack),
             unit=item["unit"],
@@ -271,6 +285,7 @@ class Agent:
                 f"Позиция {n+1} из {len(items)}: проверяю предложения для {item['name']}",
             )
             attempted = set()
+            checked_json = set()
             diagnostics = []
 
             def collect(urls):
@@ -278,8 +293,12 @@ class Agent:
                 attempted.update(candidates)
                 for url in candidates:
                     try:
-                        page = fetch_page(url)
+                        page = fetch_page(
+                            url, p["city"], self.config.get("supplier_json")
+                        )
                     except (requests.RequestException, ValueError, OSError) as error:
+                        if isinstance(error, JsonPriceError):
+                            checked_json.add(url)
                         reason = (
                             str(error)
                             if isinstance(error, ValueError)
@@ -287,6 +306,8 @@ class Agent:
                         )
                         diagnostics.append(f"{urlparse(url).hostname}: {reason}")
                         continue
+                    if (page.get("offer") or {}).get("price_source_url"):
+                        checked_json.update((url, page["url"]))
                     try:
                         offers = list(offers_from_page(page, item, p, self.model))
                     except (ValueError, KeyError, TypeError, RuntimeError) as error:
@@ -297,9 +318,11 @@ class Agent:
                         continue
                     item["offers"].extend(offers)
                     if not any(o.get("fits") for o in offers):
-                        diagnostics.append(
-                            f"{page['supplier']}: подходящая цена и фасовка не подтверждены"
+                        reason = next(
+                            (o["reason"] for o in offers if o.get("reason")),
+                            "подходящая цена и фасовка не подтверждены",
                         )
+                        diagnostics.append(f"{page['supplier']}: {reason}")
 
             def has_offer():
                 return any(
@@ -325,6 +348,8 @@ class Agent:
                         )
                 if not has_offer():
                     for entry in found[:5]:
+                        if entry.get("href") in checked_json:
+                            continue
                         try:
                             hint = indexed_offer(entry, item, self.model)
                             if hint:
