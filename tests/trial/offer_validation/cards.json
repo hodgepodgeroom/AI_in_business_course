@@ -1,0 +1,56 @@
+{
+  "moss": {
+    "url": "https://mossnab-stroi.ru/product/evrocement-500-50-kg-sht/",
+    "html": "<body class=\"single-product postid-13285\"><h1>Евроцемент М500 по 50 кг (шт.)</h1></body>",
+    "api": {
+      "id": 13285,
+      "name": "Евроцемент М500 по 50 кг (шт.)",
+      "permalink": "https://mossnab-stroi.ru/product/evrocement-500-50-kg-sht/",
+      "is_in_stock": true,
+      "is_purchasable": true,
+      "prices": {
+        "price": "6000",
+        "regular_price": "8000",
+        "sale_price": "6000",
+        "price_range": null,
+        "currency_code": "RUB",
+        "currency_symbol": "₽",
+        "currency_minor_unit": 1,
+        "currency_decimal_separator": ".",
+        "currency_thousand_separator": "",
+        "currency_prefix": "",
+        "currency_suffix": " ₽"
+      },
+      "type": "simple",
+      "add_to_cart": {
+        "text": "В корзину",
+        "description": "Добавить в корзину &laquo;Евроцемент М500 по 50 кг (шт.)&raquo;",
+        "url": "/wp-json/wc/store/v1/products/13285?add-to-cart=13285",
+        "single_text": "В корзину",
+        "minimum": 1,
+        "maximum": 9999,
+        "multiple_of": 1
+      }
+    }
+  },
+  "cem": {
+    "url": "https://cem-cement.ru/product/cemfix-cem-i-425n-cement-m500-d0/",
+    "html": "<main><h1>Cemfix Цемент М500 Д0 (ЦЕМ I 42,5Н), мешок 50кг</h1><div class=\"card-prices\"><div class=\"card-price-wrapper\"><span class=\"card-price-title\">Розничная цена</span> 365 ₽</div><div class=\"card-price-wrapper\"><span class=\"card-price-title\">Оптовая цена</span> 346 ₽</div></div></main><script type=\"application/ld+json\">{\"@type\": \"Product\", \"name\": \"Cemfix Цемент М500 Д0 (ЦЕМ I 42,5Н), мешок 50кг\", \"offers\": {\"@type\": \"Offer\", \"price\": 365, \"priceCurrency\": \"RUB\", \"availability\": \"https://schema.org/InStock\", \"priceValidUntil\": \"2025-01-11\"}}</script>"
+  },
+  "alfa": {
+    "url": "https://cementm500.su/catalog/cement/cement-cem-i-425n-magma/",
+    "html": "<h1>Цемент ЦЕМ I 42,5Н «Магма», мешок 50 кг</h1><div class=\"payments\"><p class=\"price\">210000 ₽</p><div class=\"min-opt\"><ul class=\"prices\"><li><button data-count=\"400\">Мелкий опт от 400 мешков 525 ₽</button></li></ul></div></div>"
+  },
+  "stri": {
+    "url": "https://striwer.ru/product/tsement-evrotsement-m500-d20-tsem-ii-a-sh-425-n-50-kg",
+    "html": "<h1>Цемент Евроцемент М500 Д20 ЦЕМ II А-Ш 42,5 Н 50 кг</h1><script type=\"application/ld+json\">{\"@type\": \"Product\", \"name\": \"Цемент Евроцемент М500 Д20 ЦЕМ II А-Ш 42,5 Н 50 кг\", \"offers\": {\"@type\": \"Offer\", \"price\": 380, \"priceCurrency\": \"RUB\", \"availability\": \"https://schema.org/InStock\"}}</script> <p>Цена/наличие/ед.изм./комплектацию уточняйте при подтверждениии заказа.</p>"
+  },
+  "roller": {
+    "url": "https://lidersmesi.ru/catalog/ruchnoy-instrument-khoztovary/malyarnyy-instrument/valiki-anza/valik-anza-elite-titeks-250-mm",
+    "html": "<h1>Валик ANZA Elite Титекс 250 мм</h1><script type=\"application/ld+json\">{\"@type\": \"Product\", \"name\": \"Валик ANZA Elite Титекс 250 мм\", \"offers\": {\"@type\": \"Offer\", \"price\": 1298, \"priceCurrency\": \"RUB\", \"availability\": \"https://schema.org/InStock\"}}</script>"
+  },
+  "beko": {
+    "url": "https://beko-stroy.ru/sement-materials/tsement-tsemros-ekstra-m500-50-kg/",
+    "html": "<main><h1>Цемент Цемрос Экстра М500 50 кг</h1>Цемент Цемрос Экстра М500 50 кг. 400 руб. за мешок. В наличии.</main>"
+  }
+}

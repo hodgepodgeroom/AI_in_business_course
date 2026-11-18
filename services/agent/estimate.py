@@ -117,6 +117,7 @@ def price_quote(q, quantity):
     q.update(
         packs=packs,
         purchase_quantity=ds(pack * packs),
+        excess_quantity=ds(pack * packs - quantity),
         unit_price=ds(price / pack),
         goods_total=ds(rub(price * packs)),
     )
@@ -148,7 +149,10 @@ def build_estimate(items, payload, model, questions=None):
                 ) < dec(q["purchase_quantity"]):
                     q["fits"] = False
                     q["reason"] = "Подтверждённого количества недостаточно"
-                if q["fits"]:
+                if q["fits"] and q.get("source_status") not in (
+                    "needs_confirmation",
+                    "search_index",
+                ):
                     candidates.append(q)
                 original.update(q)
             except (ValueError, KeyError):
@@ -159,7 +163,7 @@ def build_estimate(items, payload, model, questions=None):
         )
         item["selected"] = None
         if candidates:
-            wanted.append((item, candidates[:4]))
+            wanted.append((item, candidates))
         else:
             all_quoted = False
             questions.append(
@@ -181,6 +185,7 @@ def build_estimate(items, payload, model, questions=None):
         for q in basket:
             if (
                 q.get("source_status") == "search_index"
+                or ("price_region" in q and not q["price_region"])
                 or q.get("stock_quantity") is None
             ):
                 complete = False
@@ -201,7 +206,7 @@ def build_estimate(items, payload, model, questions=None):
         return complete, goods, shipping
 
     baskets = (
-        list(product(*(qs for _, qs in wanted)))
+        product(*(qs for _, qs in wanted))
         if combinations <= 50000
         else [tuple(qs[0] for _, qs in wanted)]
     )
@@ -212,30 +217,54 @@ def build_estimate(items, payload, model, questions=None):
                 "detail": "Слишком много сочетаний предложений. Показан предварительный вариант; глобальный минимум корзины не доказан.",
             }
         )
-    ranked = sorted(
+    chosen = min(
         ((basket_cost(b), b) for b in baskets),
         key=lambda pair: (
             not pair[0][0],
             pair[0][1] + pair[0][2] if pair[0][0] else pair[0][1],
         ),
+        default=((False, Decimal(0), Decimal(0)), []),
     )
-    chosen = ranked[0] if ranked else ((False, Decimal(0), Decimal(0)), [])
     (complete, goods, shipping), basket = chosen
     for (item, _), quote in zip(wanted, basket):
         item["selected"] = quote
     for item in items:
         q = item["selected"]
+        for alternative in item.get("offers", []):
+            if not alternative.get("fits") or alternative.get("source_status") not in (
+                "needs_confirmation",
+                "search_index",
+            ):
+                continue
+            detail = f"{alternative['supplier']}: {alternative.get('reason', 'Требуется подтвердить цену')}. Ориентир за товар — {alternative['goods_total']} ₽."
+            if q:
+                savings = dec(q["goods_total"]) - dec(alternative["goods_total"])
+                if savings > 0:
+                    detail += f" Если цена подтвердится, экономия на товаре составит {ds(savings)} ₽. Доставку нужно сравнить отдельно."
+            questions.append(
+                dict(title=item["name"], detail=detail, url=alternative["url"])
+            )
         if not q:
             continue
-        if q.get("source_status") == "search_index":
-            questions.append(
-                {
-                    "title": item["name"],
-                    "detail": "Цена найдена в поисковом индексе, но товарная страница недоступна для проверки. Это ценовой ориентир: цену, упаковку и наличие нужно подтвердить у поставщика.",
-                    "url": q["url"],
-                }
-            )
+        if complete:
+            for other in item["offers"]:
+                if (
+                    other.get("fits")
+                    and other.get("source_status")
+                    not in ("needs_confirmation", "search_index")
+                    and other.get("delivery_cost") is None
+                    and dec(other["goods_total"]) < dec(q["goods_total"]) + shipping
+                ):
+                    questions.append(
+                        dict(
+                            title=item["name"],
+                            detail=f"Уточните доставку у {other['supplier']}: её стоимость может изменить выбор корзины.",
+                            url=other["url"],
+                        )
+                    )
         missing = []
+        if "price_region" in q and not q["price_region"]:
+            missing.append("применимость цены для города заявки")
         if not q.get("delivery_date"):
             missing.append("срок доставки до указанного адреса")
         if q.get("delivery_cost") is None or q.get("delivery_scope") != "per_order":
@@ -244,7 +273,10 @@ def build_estimate(items, payload, model, questions=None):
             missing.append("наличие")
         if q.get("stock_quantity") is None:
             missing.append(
-                "наличие всего количества " + str(item["quantity"]) + " " + item["unit"]
+                "наличие всего количества "
+                + str(q["purchase_quantity"])
+                + " "
+                + item["unit"]
             )
         if missing:
             questions.append(
@@ -268,17 +300,19 @@ def build_estimate(items, payload, model, questions=None):
                 + " ₽.",
             }
         )
+    delivered_total = ds(goods + shipping) if complete else None
+    delivery_total = ds(shipping) if complete else None
     complete = complete and not questions and all_quoted
     return dict(
         items=items,
         goods_total=ds(goods) if wanted else None,
-        delivery_total=ds(shipping) if complete else None,
-        total=ds(goods + shipping) if complete else None,
+        delivery_total=delivery_total,
+        total=delivered_total,
         complete=complete,
         questions=questions,
         quotes_checked=sum(len(i.get("offers", [])) for i in items),
         quotes_verified=sum(
-            q.get("source_status") != "search_index"
+            q.get("source_status") not in ("search_index", "needs_confirmation")
             for i in items
             for q in i.get("offers", [])
         ),

@@ -109,11 +109,3 @@ QUOTE_SCHEMA = schema_object(
 MATCH_SCHEMA = schema_object(
     {"fits": {"type": "boolean"}, "reason": {"type": "string", "maxLength": 180}}
 )
-
-PACK_SCHEMA = schema_object(
-    {
-        "fits": {"type": "boolean"},
-        "pack_quantity": {"type": "number", "minimum": 0},
-        "evidence": {"type": "string", "maxLength": 160},
-    }
-)
